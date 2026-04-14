@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nöbetçi Eczacı</title>
+    
+    <style>
+        /* Flatpickr Base CSS */
+        .flatpickr-calendar{background:transparent;opacity:0;display:none;text-align:center;visibility:hidden;padding:0;animation:none;direction:ltr;border:0;font-size:14px;line-height:24px;border-radius:5px;position:absolute;width:307.875px;box-sizing:border-box;touch-action:manipulation;background:#fff;box-shadow:1px 0 0 #e6e6e6,-1px 0 0 #e6e6e6,0 1px 0 #e6e6e6,0 -1px 0 #e6e6e6,0 3px 13px rgba(0,0,0,0.08)}
+        .flatpickr-calendar.open{opacity:1;max-height:640px;visibility:visible;display:inline-block;z-index:99999}
+        .flatpickr-calendar.inline{opacity:1;max-height:640px;visibility:visible;display:block;position:relative;top:2px}
+        .flatpickr-day{background:none;border:1px solid transparent;border-radius:150px;box-sizing:border-box;color:#393939;cursor:pointer;font-weight:400;width:14.2857143%;flex-basis:14.2857143%;max-width:39px;height:39px;line-height:39px;margin:0;display:inline-block;position:relative;justify-content:center;text-align:center}
+        .flatpickr-day.selected{background:#e91e63;box-shadow:none;color:#fff;border-color:#e91e63}
+        .flatpickr-days{display:flex;flex-wrap:wrap;justify-content:space-around;width:307.875px}
+        .flatpickr-months{display:flex}.flatpickr-month{background:transparent;color:rgba(0,0,0,0.9);fill:rgba(0,0,0,0.9);height:34px;line-height:1;text-align:center;position:relative;user-select:none;overflow:hidden;flex:1}
+        .flatpickr-current-month{font-weight:700;line-height:inherit;color:inherit;position:absolute;width:75%;left:12.5%;padding:7.48px 0 0 0;height:34px;display:inline-block;text-align:center}
+        
+        /* Genel Arayüz Tasarımı */
+        body { font-family: -apple-system, system-ui, sans-serif; text-align: center; padding: 20px; background: #f0f2f5; display: flex; justify-content: center; }
+        .card { background: white; padding: 25px 15px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 350px; }
+        h2 { color: #333; font-size: 22px; margin-bottom: 5px; }
+        p { color: #666; font-size: 14px; margin-bottom: 20px; }
+        #datePicker { display: none; }
+        .calendar-box { min-height: 300px; display: flex; justify-content: center; align-items: center; }
+        button { background: #e91e63; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 16px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
+        button:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>💊 Nöbet Takvimi</h2>
+        <p>Günü seç, takvimine ekle.</p>
+        
+        <div class="calendar-box">
+            <div id="inlineCalendar"></div>
+        </div>
+
+        <button onclick="generateICS()">iPhone Takvime Aktar</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/tr.js"></script>
+
+    <script>
+        // Eğer CDN yine çalışmazsa diye basit bir yedek mekanizma
+        document.addEventListener("DOMContentLoaded", function() {
+            try {
+                const fp = flatpickr("#inlineCalendar", {
+                    inline: true,
+                    mode: "multiple",
+                    locale: "tr",
+                    dateFormat: "Y-m-d",
+                    minDate: "today",
+                    disableMobile: true
+                });
+            } catch (e) {
+                document.getElementById('inlineCalendar').innerHTML = "<p style='color:red'>Hata: Takvim kütüphanesi yüklenemedi. Lütfen interneti kontrol et.</p>";
+            }
+        });
+
+        function generateICS() {
+            const picker = document.querySelector("#inlineCalendar")._flatpickr;
+            const dates = picker.selectedDates;
+            
+            if (dates.length === 0) {
+                alert("Önce gün seçmelisin! ❤️");
+                return;
+            }
+
+            let ics = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Yunus//Nobet//TR\n";
+            dates.forEach(d => {
+                let start = new Date(d); start.setHours(9,0,0);
+                let end = new Date(d); end.setDate(end.getDate() + 1); end.setHours(9,0,0);
+                const f = (date) => date.toISOString().replace(/-|:|\.\d+/g, "");
+                ics += `BEGIN:VEVENT\nSUMMARY:Eczane Nöbeti 💊\nDTSTART:${f(start)}\nDTEND:${f(end)}\nDESCRIPTION:İyi nöbetler hayatım! ❤️\nEND:VEVENT\n`;
+            });
+            ics += "END:VCALENDAR";
+
+            const blob = new Blob([ics], {type: 'text/calendar'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "nobet.ics";
+            a.click();
+        }
+    </script>
+</body>
+</html>
